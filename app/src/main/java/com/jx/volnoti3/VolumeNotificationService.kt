@@ -12,17 +12,18 @@ import androidx.core.app.NotificationCompat
 import android.os.Build
 import androidx.core.graphics.drawable.IconCompat
 import android.content.pm.ServiceInfo
+import java.util.Locale
 
 class VolumeNotificationService : Service() {
     companion object {
-        private val SKY_BLUE = Color.rgb(135, 206, 235) // Lighter, more vibrant blue
-        private val PINK = Color.rgb(255, 182, 193)    // Light pink
+        private val skyBlue = Color.rgb(135, 206, 235) // Lighter, more vibrant blue
+        private val pink = Color.rgb(255, 182, 193)    // Light pink
     }
 
     private lateinit var notificationManager: NotificationManager
     private lateinit var audioManager: AudioManager
-    private val CHANNEL_ID = "VolumeNotificationChannel"
-    private val NOTIFICATION_ID = 1
+    private val channelId = "VolumeNotificationChannel"
+    private val notificationId = 1
     
     private val volumeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -37,8 +38,8 @@ class VolumeNotificationService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
         createNotificationChannel()
         
         // Register volume change receiver
@@ -58,9 +59,9 @@ class VolumeNotificationService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val notification = createNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+            startForeground(notificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         } else {
-            startForeground(NOTIFICATION_ID, notification)
+            startForeground(notificationId, notification)
         }
         return START_STICKY
     }
@@ -69,7 +70,7 @@ class VolumeNotificationService : Service() {
 
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
-            CHANNEL_ID,
+            channelId,
             "Volume Notification",
             NotificationManager.IMPORTANCE_LOW
         ).apply {
@@ -90,7 +91,7 @@ class VolumeNotificationService : Service() {
 
         // Draw the volume number
         val paint = Paint().apply {
-            color = if (volume == 0) SKY_BLUE else PINK // Sky blue when 0, Pink otherwise
+            color = if (volume == 0) skyBlue else pink // Sky blue when 0, Pink otherwise
             textSize = size * 0.85f // Increased text size relative to icon
             textAlign = Paint.Align.CENTER
             typeface = Typeface.DEFAULT_BOLD
@@ -102,13 +103,15 @@ class VolumeNotificationService : Service() {
         val xPos = canvas.width / 2f
         val yPos = (canvas.height / 2f) - ((paint.descent() + paint.ascent()) / 2f)
         
+        val formattedVolume = String.format(Locale.US, "%02d", volume)
+        
         // Draw text with stroke for better visibility
         paint.style = Paint.Style.STROKE
-        canvas.drawText(String.format("%02d", volume), xPos, yPos, paint)
+        canvas.drawText(formattedVolume, xPos, yPos, paint)
         
         // Draw text fill
         paint.style = Paint.Style.FILL
-        canvas.drawText(String.format("%02d", volume), xPos, yPos, paint)
+        canvas.drawText(formattedVolume, xPos, yPos, paint)
 
         return IconCompat.createWithBitmap(bitmap)
     }
@@ -118,7 +121,7 @@ class VolumeNotificationService : Service() {
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val volumePercentage = ((volume.toFloat() / maxVolume.toFloat()) * 100).toInt()
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, channelId)
             .setSmallIcon(createVolumeIcon(volumePercentage))
             .setOngoing(true)
             .setShowWhen(false)
@@ -131,6 +134,6 @@ class VolumeNotificationService : Service() {
 
     private fun updateNotification() {
         val notification = createNotification()
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        notificationManager.notify(notificationId, notification)
     }
 }
