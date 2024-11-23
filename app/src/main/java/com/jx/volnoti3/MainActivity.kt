@@ -1,8 +1,10 @@
 package com.jx.volnoti3
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +14,7 @@ import androidx.core.content.ContextCompat
 class MainActivity : AppCompatActivity() {
     companion object {
         private const val PERMISSION_REQUEST_CODE = 123
+        private const val EXTRA_FOREGROUND_SERVICE_TYPE = "android.foregroundServiceType"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +59,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun startVolumeService() {
         val serviceIntent = Intent(this, VolumeNotificationService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            serviceIntent.putExtra(EXTRA_FOREGROUND_SERVICE_TYPE, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+        }
         startForegroundService(serviceIntent)
     }
 }
